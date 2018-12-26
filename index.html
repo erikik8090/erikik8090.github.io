@@ -1,3 +1,300 @@
-<body>
-<p>testy test test</p>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>CodeWars8086</title>
+
+    <link rel="stylesheet" type="text/css" href="main.css">
+
+    <script type="text/javascript" language="javascript" src="gas_riscv_js.js"></script>
+    <script type="text/javascript" language="javascript" src="codewars_js/codewars_js.nocache.js"></script>
+    <script type="text/javascript" language="javascript" src="main.js"></script>
+</head>
+
+<body onload="start()">
+    <div id="action_panel">
+        <div id="action_rel">
+            <div id="memory_panel">
+                <input type="checkbox" id="warCanvasDummyInput" class="hidden">
+                <canvas id="warCanvas"></canvas>
+                <div id="hoverCellInfo"></div>
+            </div>
+
+            <div id="edit_panel">
+                <input type="text" id="editor_title" spellcheck="false">
+                <input id="uploadBinInput" type="file" class="hidden" onchange="return triggerUploadBinChanged()">
+                <label id="uploadBinBut" class="sc-btn" for="uploadBinInput" title="Upload binary file"></label>
+                <label id="aboutBtn" class="sc-btn" title="About" onclick="triggerAbout(true)"></label>
+
+                <br>
+                <div id="editor_boxes">
+                    <div id="edit_area">
+                        <div id="box_numbers"></div>
+                        <pre id="asm_pre" class="codearea"><div id="asm_show_rel"><code id="asm_show" class="codearea"></code></div><code id="opcodes_edit" class="codearea allow_select" wrap="off"></code><code id="asm_linenums" class="codearea" wrap="off">1</code></pre>
+                        <textarea id="asm_edit" class="codearea allow_select" wrap="off" spellcheck="false"
+                            autocapitalize="off" autocomplete="off" autocorrect="off" onscroll="handle_asm_edit_scroll()"></textarea>
+                        <div id="box_opcodes"></div>
+                        <!-- want these in front of the text but it ignores pointer events -->
+                        <div id="box_edit"></div>
+                    </div>
+                    <div id="debug_area" style="display:none;">
+                        <input type="text" id="debug_goto" spellcheck="false" onkeyup="triggerGoToKey()">
+                        <label id="btnGoTo" class="sc-btn" onclick="triggerGoTo()">go to</label>
+                        <span id="stepnum_cont">Step:<span id="stepnum">0</span></span>
+                        <div id="dbg_box_addr"></div>
+                        <pre id="debug_text" class="allow_select" onscroll="debugAreaScroll(false)"></pre>
+                    </div>
+                </div>
+                <div id="editor_bottom">
+                    <div id="asm_output" class="codearea allow_select" wrap="off"></div>
+                    <div id="asm_options">
+                        Debug load address:
+                        <select id="asm_load_addr_type" class="my_combo_box" onchange="changedLoadAddrType()">
+                            <option value="rand">Random</option>
+                            <option value="fixed">Fixed</option>
+                        </select>
+                        <input type="text" class="small_editline" id="fixed_load_addr" spellcheck="false" value="A000"
+                            oninput="changedFixedAddr()">
+                        <span id="seed_edit">Seed:<input class="small_editline" id="seed" type="text" spellcheck="false"></span>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="cpuPanel" style="display:none;">
+                <div id="dbgButtons">
+                    <label id="btnPause" class="sc-btn title-buttons">Pause</label>
+                    <label id="btnSingleRound" class="sc-btn title-buttons">Step</label>
+                    <span id="speedSliderCont">Speed:<input type="range" min="-35" max="200" value="0" class="slider"
+                            id="speedSlider">
+                        <span id="speedSliderVal">0</span>
+                        <span id="speedZero" class="sc-btn base-btn" onclick="j_triggerZeroSpeed()"></span><br>
+                    </span>
+                </div>
+                <div id="registers_block">
+                    <div id="hex_dec">
+                        <input id="hexCheckbox" class="sc-check hidden" onchange="triggerRegBase(true)" type="checkbox"
+                            checked="true">
+                        <label id="hexBtn" class="sc-btn base-btn" for="hexCheckbox">Hex</label><br>
+                        <input id="decCheckbox" class="sc-check hidden" onchange="triggerRegBase(false)" type="checkbox">
+                        <label id="decBtn" class="sc-btn base-btn" for="decCheckbox">Dec</label>
+                    </div>
+                    <span class="reg_name">x0:</span><input type="text" id="reg_0" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x1:</span><input type="text" id="reg_1" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x2:</span><input type="text" id="reg_2" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x3:</span><input type="text" id="reg_3" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">x4:</span><input type="text" id="reg_4" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x5:</span><input type="text" id="reg_5" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x6:</span><input type="text" id="reg_6" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x7:</span><input type="text" id="reg_7" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">x8:</span><input type="text" id="reg_8" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x9:</span><input type="text" id="reg_9" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x10:</span><input type="text" id="reg_10" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x11:</span><input type="text" id="reg_11" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">x12:</span><input type="text" id="reg_12" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x13:</span><input type="text" id="reg_13" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x14:</span><input type="text" id="reg_14" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x15:</span><input type="text" id="reg_15" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">x16:</span><input type="text" id="reg_16" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x17:</span><input type="text" id="reg_17" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x18:</span><input type="text" id="reg_18" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x19:</span><input type="text" id="reg_19" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">x20:</span><input type="text" id="reg_20" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x21:</span><input type="text" id="reg_21" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x22:</span><input type="text" id="reg_22" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x23:</span><input type="text" id="reg_23" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">x24:</span><input type="text" id="reg_24" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x25:</span><input type="text" id="reg_25" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x26:</span><input type="text" id="reg_26" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x27:</span><input type="text" id="reg_27" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">x28:</span><input type="text" id="reg_28" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x29:</span><input type="text" id="reg_29" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x30:</span><input type="text" id="reg_30" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name">x31:</span><input type="text" id="reg_31" class="reg_input" maxlength="9"
+                        spellcheck="false"><br>
+                    <span class="reg_name">PC:</span><input type="text" id="reg_PC" class="reg_input" maxlength="9"
+                        spellcheck="false">
+                    <span class="reg_name reg_long_name">Energy:</span><input type="text" id="reg_Energy" class="reg_input"
+                        maxlength="9" spellcheck="false">
+                    <span class="reg_name reg_long_name">Flags:</span><input type="text" id="reg_Flags" class="reg_input"
+                        maxlength="9" spellcheck="false"><br>
+                    <table id="reg_flags_table" cellspacing="0">
+                        <tr>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td title="Overflow Flag">OF</td>
+                            <td title="Direction Flag">DF</td>
+                            <td title="Interrupt Enable Flag">IF</td>
+                            <td title="Trap Flag">TF</td>
+                            <td class="bytesep" title="Sign Flag">SF</td>
+                            <td title="Zero Flag">ZF</td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td title="Adjust Flag">AF</td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td title="Parity Flag">PF</td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td title="Carry Flag">CF</td>
+                        </tr>
+                        <tr>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="OF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="OF_fcheck" title="Overflow Flag"></label></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="DF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="DF_fcheck" title="Direction Flag"></label></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="IF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="IF_fcheck" title="Interrupt Enable Flag"></label></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="TF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="TF_fcheck" title="Trap Flag"></label></td>
+                            <td class="bytesep">
+                                <input class="flag_check_box hidden mycheck" id="SF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="SF_fcheck" title="Sign Flag"></label></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="ZF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="ZF_fcheck" title="Zero Flag"></label></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="AF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="AF_fcheck" title="Adjust Flag"></label></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="PF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="PF_fcheck" title="Parity Flag"></label></td>
+                            <td class="flag_unsed" title="Reserved"></td>
+                            <td>
+                                <input class="flag_check_box hidden mycheck" id="CF_fcheck" type="checkbox">
+                                <label class="flag_check mycheck_label" for="CF_fcheck" title="Carry Flag"></label></td>
+                        </tr>
+                    </table>
+                    <div id="stackArea" class="submem_area">
+                        <div class="submem_title">Stack</div>
+                        <div class="submem_box_addr"></div>
+                        <div id="stackList" class="submem_list"></div>
+                    </div>
+                    <div id="sharedMemArea" class="submem_area">
+                        <div class="submem_title">Shared Memory</div>
+                        <div class="submem_box_addr"></div>
+                        <div id="sharedMemList" class="submem_list"></div>
+                    </div>
+                    <div id="watch_container">
+                        <div class="submem_title">Watch</div>
+                        <div id="watchArea">
+                        </div>
+                    </div>
+
+                    <br>
+                    <div id="messagesArea" class="codearea allow_select" wrap="off"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div id="gray_out_debugger" ontransitionend="gray_out_anim_end()"></div>
+
+    <div id="players_panel">
+        <div id="players_rel">
+            <input id="competeCheckbox" class="hidden sc-check" onchange="openCompete()" type="checkbox">
+            <label id="competeBtn" class="sc-btn" for="competeCheckbox">
+                <span id="competeBtnIn2">Competition</span>
+            </label>
+            <br>
+            <input id="debugCheckbox" class="hidden" onchange="triggerDebug()" type="checkbox">
+            <label id="debugBtn" class="sc-btn" for="debugCheckbox">
+                <span id="debugBtnIn" class="sc-span"></span>
+                <span id="debugBtnIn2">Debug</span>
+            </label>
+            <div id="players_contaier">
+
+            </div>
+            <label id="addPlayerBtn" class="sc-btn" onclick="addPlayersPanel()" title="Add Player"><span id="addPlayerBtnIn"></span></label>
+
+            <div id="pl_frame_zombies" class="toppic">
+                <div class="famtitle">
+                    <input class="fam_check_box hidden mycheck" id="player_check_zombies" type="checkbox" checked
+                        onchange="">
+                    <label class="fam_check mycheck_label" for="player_check_zombies"></label>
+                    <label id="player_name_lbl_zombies" class="fam_label">Zombies</label>
+                </div>
+                <div id="zombies_container">
+
+                </div>
+                <label id="addZombieBtn" class="sc-btn" onclick="addZombieCode()" title="Add Zombie"><span id="addZombieBtnIn"></span></label>
+
+            </div>
+
+
+        </div>
+    </div>
+
+    <div id="graphs_panel" style="width:0; opacity:0;" ontransitionend="graph_panel_anim_end()">
+        <div id="graphs_title">Competition</div>
+        <div id="graphs_control">
+            <input id="competeRunCheckbox" class="hidden" onchange="triggerStartCompete()" type="checkbox">
+            <label id="competeRunBtn" class="sc-btn" for="competeRunCheckbox">
+                <span id="competeRunBtnIn" class="sc-span"></span>
+                <span id="competeRunBtnIn2">Start!</span>
+            </label>
+            <label id="battlesLabel">Battles to run:</label>
+            <input id="battlesPerGroupField" type="text" spellcheck="false">
+            <label id="battlesRan"></label>
+            <canvas id="graphs_canvas" width="680" height="600"></canvas>
+        </div>
+
+    </div>
+
+    <div id="aboutBack" class="popupBack" onclick="triggerAbout(false)">
+        <div id="aboutWin" class="popupWin">
+            <h1>codewars8086_js</h1><br>
+            <h2>Javascript GUI, integrated editor and debugger: Shy Shalom<br>
+                <h2>Original codeguru emulator: Danny Leshem<br>
+                    <h3>If you find a bug open a new issue in:<br>
+                        <a href="https://github.com/shooshx/corewars8086_js/issues" target="_blank">https://github.com/shooshx/corewars8086_js/issues</a><br>
+                        Or email to:<br>
+                        <a href="mailto:shooshx@gmail.com" target="_blank">shooshx@gmail.com</a><br>
+                        <h3>
+        </div>
+    </div>
+
 </body>
+
+</html>
